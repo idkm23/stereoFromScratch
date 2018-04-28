@@ -35,20 +35,16 @@ void scaleThenShow(Mat img) {
 int main() {
     Mat img1, img2, g1, g2;
     Mat disp, disp8;
-    Mat out;
 
     img1 = imread("res/im0_mask.png");
     img2 = imread("res/im1_mask.png");
 
     cvtColor(img1, g1, CV_BGR2GRAY);
     cvtColor(img2, g2, CV_BGR2GRAY);
-    out = g1.clone();
-    cout << "depth " << out.depth() << endl
-        << "channels " << out.channels() << endl;
 
     MyStereoBM::State state;
-    state.max_disparity = 60;
-    state.window_size = 7;
+    state.max_disparity = 50;
+    state.window_size = 11;
     state.width = 450;
     state.height = 375;
     state.focal_length = 4161.221;
@@ -59,7 +55,7 @@ int main() {
     state.cy2 = 1011.728;
 
     MyStereoBM my_stereo(state);
-    my_stereo.compute(g1, g2, out);
+    Mat out = my_stereo.compute(g1, g2);
     scaleThenShow(g1);
     scaleThenShow(out);
     waitKey(0);

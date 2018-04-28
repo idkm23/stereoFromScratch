@@ -11,7 +11,13 @@ MyStereoBM::MyStereoBM(MyStereoBM::State state) {
     this->s = state;
 }
 
-void MyStereoBM::compute(Mat left, Mat right, Mat out) {
+Mat MyStereoBM::compute(Mat left_src, Mat right_src) {
+    Mat left;
+    Mat right;
+    resize(left_src, left, Size(), 1.0/SCALE, 1.0/SCALE);
+    resize(right_src, right, Size(), 1.0/SCALE, 1.0/SCALE);
+    s.scale(SCALE);
+
     vector<vector<int>> disparity_map(s.width, vector<int>(s.height));
     for (int y = offset.y; y < s.height; y++) {
         // progress output
@@ -33,6 +39,8 @@ void MyStereoBM::compute(Mat left, Mat right, Mat out) {
                 int sad =
                     SumOfAbsoluteDifferences(left, Point(x, y),
                             right, Point(scan_x, y));
+                // penalize the SAD if disparity is
+                // too different from disparity_map[x][y-3:y-1]
                 if (min_sad == -1 || sad < min_sad) {
                     min_sad = sad;
                     best_x = scan_x;
@@ -47,10 +55,12 @@ void MyStereoBM::compute(Mat left, Mat right, Mat out) {
         }
     }
 
-    drawDisparity(disparity_map, out);
+    return drawDisparity(disparity_map);
 }
 
-void MyStereoBM::drawDisparity(const vector<vector<int>>& disparity_map, Mat out) {
+Mat MyStereoBM::drawDisparity(const vector<vector<int>>& disparity_map) {
+    Mat small_out(s.height, s.width, CV_8UC1);
+    Mat out;
     double mag = 0;
     for (int y = offset.y; y < s.height; y++) {
         for (int x = offset.x; x < s.width; x++) {
@@ -59,9 +69,12 @@ void MyStereoBM::drawDisparity(const vector<vector<int>>& disparity_map, Mat out
             if (mag > 1) {
                 mag = 1;
             }
-            out.at<uchar>(y, x) = 255 * mag;
+            small_out.at<uchar>(y, x) = 255 * mag;
         }
     }
+    resize(small_out, out, Size(), SCALE, SCALE);
+    applyColorMap(out, out, cv::COLORMAP_JET);
+    return out;
 }
 
 
@@ -107,5 +120,5 @@ void MyStereoBM::getDisparityWindow(Mat img, Point origin,
 }
 
 double MyStereoBM::disparityToMM(int disparity) {
-    return s.baseline * s.focal_length / (disparity + s.doffs);
+    return s.baseline * s.focal_length / (disparity*SCALE + s.doffs);
 }

@@ -24,15 +24,22 @@ class MyStereoBM {
                 double cy1;
                 double cy2;
                 double doffs;
+                
+                void scale(int factor) {
+                    max_disparity /= factor;
+                    window_size /= factor;
+                    window_size2 /= factor;
+                    width /= factor;
+                    height /= factor;
+                }
         };
 
         MyStereoBM(State state);
-        void compute(cv::Mat left, cv::Mat right, cv::Mat out);
+        cv::Mat compute(cv::Mat left, cv::Mat right);
 
     private:
-        void drawDisparity(
-                const std::vector<std::vector<int>>& disparity_map,
-                cv::Mat out);
+        cv::Mat drawDisparity(
+                const std::vector<std::vector<int>>& disparity_map);
         int SumOfAbsoluteDifferences(
                 cv::Mat left,
                 cv::Point p1,
@@ -48,6 +55,7 @@ class MyStereoBM {
 
         State s;
         const cv::Point offset = cv::Point(0, 0);
+        const static int SCALE = 2;
 };
 
 #endif
