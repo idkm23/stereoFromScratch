@@ -1,6 +1,7 @@
 #include "MyStereoBM.h"
 
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 using namespace cv;
@@ -9,6 +10,68 @@ MyStereoBM::MyStereoBM(MyStereoBM::State state) {
     state.window_size2 = state.window_size/2;
     state.doffs = state.cx2 - state.cx1;
     this->s = state;
+}
+
+Mat MyStereoBM::computeDynamic(Mat left_src, Mat right_src) {
+    Mat left;
+    Mat right;
+    resize(left_src, left, Size(), 1.0/SCALE, 1.0/SCALE);
+    resize(right_src, right, Size(), 1.0/SCALE, 1.0/SCALE);
+    s.scale(SCALE);
+
+    vector<vector<int>> disparity_map(s.width, vector<int>(s.height));
+    vector<vector<int>> disparity_cost(s.width, vector<int>(s.max_disparity));
+    vector<vector<int>> optimal_indices(s.width, vector<int>(s.max_disparity));
+    for (int y = offset.y; y < s.height; y++) {
+        // progress output
+        cout << y << " / " << s.height << endl;
+
+        for(auto& i: disparity_cost) {
+            std::fill(i.begin(), i.end(), INT_MAX);
+        }
+        for(auto& i: optimal_indices) {
+            std::fill(i.begin(), i.end(), 0);
+        }
+
+        // row bounds for block
+        int minr = max(0, y - s.window_size2);
+        int maxr = min(s.height, y + s.window_size2);
+
+        for (int x = offset.x; x < s.width; x++) {
+
+            // column bounds for the block
+            int minc = max(0, x - s.window_size2);
+            int maxc = min(s.width, x + s.window_size2);
+
+            // how many pixels we can look left and right
+            int mind = max(-s.max_disparity, -minc);
+            //int maxd = min(s.max_disparity, s.width - maxc);
+            int maxd = 0;
+
+            for (int i = mind; i < maxd; i++) {
+                disparity_cost[y][i + s.max_disparity] = 
+                    SumOfAbsoluteDifferences(left, Point(x, y),
+                            right, Point(i + x));
+            }
+
+            vector<int>& last_row = optimal_indices[y];
+            for (int i = 0; i < s.width; i++) {
+                int finf = 1000; // false infinity
+                int cfinf = i * finf;
+                int disparity_penalty = 0.5;
+
+
+                vector<vector<int>> penalized;
+                vector<int> v;
+                // i cant figure this out :(
+                // you need to like fit every pixel and determine
+                // when it is best to incur a disparity penalty
+                // when there is no match nearby
+            }
+        }
+    }
+
+    return drawDisparity(disparity_map);
 }
 
 Mat MyStereoBM::compute(Mat left_src, Mat right_src) {

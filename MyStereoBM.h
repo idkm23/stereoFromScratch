@@ -36,6 +36,7 @@ class MyStereoBM {
 
         MyStereoBM(State state);
         cv::Mat compute(cv::Mat left, cv::Mat right);
+        cv::Mat computeDynamic(cv::Mat left, cv::Mat right);
 
     private:
         cv::Mat drawDisparity(
