@@ -2,6 +2,7 @@
 #include <iostream>
 #include <math.h>
 #include <cstdlib>
+#include <chrono>
 #include <string>
 
 #include <opencv/cv.h>
@@ -15,8 +16,6 @@
 
 using namespace std;
 using namespace cv;
-
-// gray has one channel, with a range of 0-255
 
 void PrintVector(const vector<uchar>& vec) {
     cout << "{ ";
@@ -36,17 +35,17 @@ int main() {
     Mat img1, img2, g1, g2;
     Mat disp, disp8;
 
-    img1 = imread("res/im0_mask.png");
-    img2 = imread("res/im1_mask.png");
+    img1 = imread("res/im0.png");
+    img2 = imread("res/im1.png");
 
     cvtColor(img1, g1, CV_BGR2GRAY);
     cvtColor(img2, g2, CV_BGR2GRAY);
 
     MyStereoBM::State state;
-    state.max_disparity = 50;
+    state.max_disparity = 70;
     state.window_size = 11;
-    state.width = 450;
-    state.height = 375;
+    state.width = img1.cols;
+    state.height = img1.rows;
     state.focal_length = 4161.221;
     state.baseline = 176.252;
     state.cx1 = 1176.728;
@@ -55,7 +54,16 @@ int main() {
     state.cy2 = 1011.728;
 
     MyStereoBM my_stereo(state);
+
+    using namespace std::chrono;
+    milliseconds before = duration_cast<milliseconds>(
+            system_clock::now().time_since_epoch());
     Mat out = my_stereo.compute(g1, g2);
+    milliseconds after = duration_cast<milliseconds>(
+            system_clock::now().time_since_epoch());
+    std::chrono::duration<double, std::milli> dur = after - before;
+    cout << "\nduration: " << dur.count()/1000.0 << endl;
+
     scaleThenShow(g1);
     scaleThenShow(out);
     waitKey(0);

@@ -117,7 +117,7 @@ Mat MyStereoBM::compute(Mat left_src, Mat right_src) {
             }
         }
     }
-
+    writeFilePFM(disparity_map, "disp0MUNROE.pfm", 1.0/s.max_disparity);
     return drawDisparity(disparity_map);
 }
 
@@ -184,4 +184,43 @@ void MyStereoBM::getDisparityWindow(Mat img, Point origin,
 
 double MyStereoBM::disparityToMM(int disparity) {
     return s.baseline * s.focal_length / (disparity*SCALE + s.doffs);
+}
+
+
+int MyStereoBM::littleEndian() {
+    int intval = 1;
+    uchar *uval = (uchar *)&intval;
+    return uval[0] == 1;
+}
+
+// adapted from Middlebury evaluation code
+void MyStereoBM::writeFilePFM(const vector<vector<int>>& data,
+        const char* filename, float scale_factor=1/255.0) {
+    FILE *stream = fopen(filename, "wb");
+    if (stream == 0) {
+        fprintf(stderr, "writeFilePFM: could not open %s\n", filename);
+        exit(1);
+    }
+
+    if (littleEndian()) {
+        scale_factor = -scale_factor;
+    }
+
+    fprintf(stream, "Pf\n%d %d\n%f\n", s.width, s.height, scale_factor);
+
+    int n = s.width;
+    // write rows -- pfm stores rows in inverse order!
+    for (int y = s.height-1; y >= 0; y--) {
+        for (int x = 0; x < s.width; x++) {
+            float val = data[x][y];
+            if ((int)fwrite(&val, sizeof(float), 1, stream) != 1) {
+                fprintf(stderr, "WriteFilePFM: problem writing data\n");
+                exit(1);
+            }
+        }
+        
+    }
+
+    // close file
+    fclose(stream);
 }

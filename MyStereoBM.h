@@ -47,6 +47,9 @@ class MyStereoBM {
                 cv::Mat right,
                 cv::Point p2);
         double disparityToMM(int disparity);
+        int littleEndian();
+        void writeFilePFM(const std::vector<std::vector<int>>& data,
+            const char* filename, float scale_factor);
 
         // deprecated, used with normalized correlation
         void getDisparityWindow(
@@ -56,7 +59,7 @@ class MyStereoBM {
 
         State s;
         const cv::Point offset = cv::Point(0, 0);
-        const static int SCALE = 2;
+        const static int SCALE = 1;
 };
 
 #endif
